@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { insightsCopy } from "@/lib/dictionary-insights";
+import { buildReferralLink, createMyCode, forgetMyCode, getActiveReferral, isValidCode, normalizeCode, readMyCode } from "@/lib/referral";
+import { AmbassadorPanel } from "./ambassador-panel";
 import { AMBASSADOR_CHANNELS, buildAmbassadorMessage, type AmbassadorChannel } from "@/lib/ambassador";
 import { LIMITS, OFFICIAL } from "@/lib/facts";
 import { formatInt, formatLei, formatPercent, shareOfPhase1 } from "@/lib/format";
@@ -56,6 +59,19 @@ export function AlumniView() {
   const [channel, setChannel] = useState<AmbassadorChannel>("linkedin");
   const [msgLang, setMsgLang] = useState<Lang | null>(null);
   const messageLang = msgLang ?? lang;
+  const ref = insightsCopy[lang].referral;
+
+  // Ambassador code (this browser) and the referral that brought this visitor, if any.
+  const [myCode, setMyCode] = useState<string | null>(null);
+  const [arrivedVia, setArrivedVia] = useState<string | null>(null);
+  useEffect(() => {
+    const own = readMyCode();
+    setMyCode(own);
+    // Child effects run before the provider's capture, so also read ?ref= directly on first load.
+    const raw = new URLSearchParams(window.location.search).get("ref");
+    const fromUrl = raw ? normalizeCode(raw) : null;
+    setArrivedVia(getActiveReferral() ?? (fromUrl && isValidCode(fromUrl) && fromUrl !== own ? fromUrl : null));
+  }, []);
 
   useTesterSignal((kind, nonce) => {
     if (kind === "corporate") return;
@@ -75,7 +91,9 @@ export function AlumniView() {
   const amount = result.value;
   const error = errorMessage(t, result.error);
   const pct = amount ? shareOfPhase1(amount) : 0;
-  const message = amount ? buildAmbassadorMessage(messageLang, channel, formatLei(amount), formatPercent(pct)) : "";
+  const baseMessage = amount ? buildAmbassadorMessage(messageLang, channel, formatLei(amount), formatPercent(pct)) : "";
+  const message =
+    baseMessage && myCode ? `${baseMessage}\n\n${insightsCopy[messageLang].referral.linkLine(buildReferralLink(myCode))}` : baseMessage;
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
@@ -86,6 +104,11 @@ export function AlumniView() {
             {t.alumniPage.title}
           </h1>
           <p className="mt-6 max-w-[58ch] text-[16.5px] leading-[1.6] text-ink-2">{t.alumniPage.lede}</p>
+          {arrivedVia && (
+            <p role="status" className="mt-6 max-w-[58ch] border-l-2 border-accent bg-accent-wash/60 px-3 py-2 text-[13.5px] text-accent-ink">
+              {ref.arrivedVia(arrivedVia)}
+            </p>
+          )}
         </div>
         <aside className="lg:col-span-5 lg:pt-3">
           <p className="eyebrow">{t.alumniPage.rulesTitle}</p>
@@ -205,6 +228,15 @@ export function AlumniView() {
           </div>
         </div>
       </section>
+
+      <AmbassadorPanel
+        code={myCode}
+        onCreate={() => setMyCode(createMyCode())}
+        onForget={() => {
+          forgetMyCode();
+          setMyCode(null);
+        }}
+      />
     </div>
   );
 }

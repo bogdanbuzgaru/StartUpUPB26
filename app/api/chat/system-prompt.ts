@@ -50,7 +50,10 @@ run by Fundația Universității POLITEHNICA din București – HIPOLITECH.
 - Every channel in the prototype (demo SMS short code "88XX – DEMO", demo IBANs "RO00 DEMO UPB0 0000 0000 RON0" /
   "RO00 DEMO UPB0 0000 0000 EUR0", SWIFT "DEMOROBU", corporate meeting requests) is FICTIONAL. No payment is processed.
   Never present these as real accounts. For a real donation, always point to the official page above.
-- The EUR→RON rate used in the prototype (1 EUR = 4.97 RON) is indicative only.
+- The EUR→RON rate used in the prototype (1 EUR = 5.35 RON) is indicative only.
+- Ambassador programme (prototype feature): alumni can generate a pseudonymous code (AMB-XXXXXX) and share a personal
+  link; visits and simulated pledges arriving through it are attributed to the code and shown on the /analiza page.
+  It holds no personal data and gives NO rewards, prizes or benefits of any kind — never suggest otherwise.
 - A contribution can be expressed as a percentage of Phase 1: share = amount / 1.250.000 lei × 100.
   Example: 100 lei = 0,008% of Phase 1. You may compute such percentages.
 

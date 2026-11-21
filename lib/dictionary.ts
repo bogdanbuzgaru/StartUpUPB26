@@ -52,6 +52,7 @@ const ro = {
     alumni: "Absolvenți & Donatori",
     contribute: "Canale de Contribuție",
     transparency: "Transparență",
+    analytics: "Analiză",
     primary: "Principal",
     langLabel: "Schimbă limba",
     brandSub: "Studiu de caz · HIPOLITECH",
@@ -230,7 +231,7 @@ const ro = {
     method: [
       { k: "Pondere din Faza 1", v: "sumă ÷ 1.250.000 lei × 100" },
       { k: "Progres simulat", v: "(angajamente individuale + estimări corporate) ÷ 250.000 lei × 100" },
-      { k: "Conversie EUR (indicativă)", v: "1 EUR = 4,97 RON" },
+      { k: "Conversie EUR (indicativă)", v: "1 EUR = 5,35 RON" },
     ],
   },
   simulator: {
@@ -397,7 +398,7 @@ const ro = {
     desc: "Pentru absolvenții din diaspora: un cont fictiv în euro, cu previzualizare automată a echivalentului în lei.",
     ibanLabel: "IBAN demonstrativ (EUR)",
     swiftLabel: "SWIFT / BIC demonstrativ",
-    rate: "Curs indicativ: 1 EUR = 4,97 RON",
+    rate: "Curs indicativ: 1 EUR = 5,35 RON",
     preview: "Echivalent estimat",
     submit: "Simulează Înregistrare Transfer EUR",
   },
@@ -513,6 +514,7 @@ const en: Dict = {
     alumni: "Alumni & Individual",
     contribute: "Contribution Channels",
     transparency: "Transparency",
+    analytics: "Analytics",
     primary: "Main",
     langLabel: "Switch language",
     brandSub: "Case study · HIPOLITECH",
@@ -691,7 +693,7 @@ const en: Dict = {
     method: [
       { k: "Share of Phase 1", v: "amount ÷ 1.250.000 lei × 100" },
       { k: "Simulated progress", v: "(individual pledges + corporate estimates) ÷ 250.000 lei × 100" },
-      { k: "EUR conversion (indicative)", v: "1 EUR = 4.97 RON" },
+      { k: "EUR conversion (indicative)", v: "1 EUR = 5.35 RON" },
     ],
   },
   simulator: {
@@ -858,7 +860,7 @@ const en: Dict = {
     desc: "For alumni abroad: a fictional euro account with an automatic preview of the lei equivalent.",
     ibanLabel: "Demo IBAN (EUR)",
     swiftLabel: "Demo SWIFT / BIC",
-    rate: "Indicative rate: 1 EUR = 4.97 RON",
+    rate: "Indicative rate: 1 EUR = 5.35 RON",
     preview: "Estimated equivalent",
     submit: "Simulate EUR Transfer Registration",
   },

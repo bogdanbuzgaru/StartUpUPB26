@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { EUR_TO_RON, LIMITS, SEGMENTS, type Channel, type Segment } from "@/lib/facts";
 import { formatAmount, formatLei, formatPercent, parseAmount, shareOfPhase1 } from "@/lib/format";
 import { errorMessage } from "@/lib/dictionary";
+import { insightsCopy } from "@/lib/dictionary-insights";
 import { useI18n } from "@/lib/i18n";
 import { savePledge } from "@/lib/metrics";
 import { hasErrors, isSegment, validateAmount, validatePersonName, type Errors } from "@/lib/validation";
@@ -12,7 +13,7 @@ import { AmountPicker, Field, FormAlert, SubmitButton } from "@/components/ui/fo
 
 type Keys = "name" | "segment" | "amount";
 
-type Receipt = { ref: string; name: string; amount: number; amountRon: number; mode: "remote" | "local" };
+type Receipt = { ref: string; name: string; amount: number; amountRon: number; mode: "remote" | "local"; referral?: string };
 
 const TESTER_VALID: Record<Channel, { name: string; amount: string }> = {
   sms: { name: "Andrei Popescu Demo", amount: "25" },
@@ -42,7 +43,7 @@ export function PledgeForm({
   submitLabel: string;
   prefillFromQuery?: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { refresh } = useMetrics();
   const currency = channel === "iban_eur" ? "EUR" : "RON";
   const limits = LIMITS[channel];
@@ -138,7 +139,7 @@ export function PledgeForm({
         setSaveError(true);
         return;
       }
-      setReceipt({ ref: makeRef(channel), name: name.trim(), amount: value, amountRon, mode: res.mode });
+      setReceipt({ ref: makeRef(channel), name: name.trim(), amount: value, amountRon, mode: res.mode, referral: res.referral });
       await refresh();
     } catch {
       if (gen === generation.current) setSaveError(true);
@@ -185,6 +186,9 @@ export function PledgeForm({
           <p className="text-[12.5px] leading-relaxed text-ink-2">
             {t.forms.receiptNote} {receipt.mode === "local" ? t.forms.receiptSavedLocal : t.forms.receiptSavedRemote}
           </p>
+          {receipt.referral && (
+            <p className="font-mono text-[12px] text-accent">{insightsCopy[lang].referral.attributed(receipt.referral)}</p>
+          )}
           <button
             type="button"
             onClick={reset}

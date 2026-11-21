@@ -45,6 +45,7 @@ export function SiteHeader() {
     { href: "/absolventi", label: t.nav.alumni },
     { href: "/contribuie", label: t.nav.contribute },
     { href: "/transparenta", label: t.nav.transparency },
+    { href: "/analiza", label: t.nav.analytics },
   ];
 
   // Drawer: Escape closes it, and the page behind does not scroll while it is open.
@@ -78,7 +79,7 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav aria-label={t.nav.primary} className="hidden lg:block">
+        <nav aria-label={t.nav.primary} className="hidden xl:block">
           <ul className="flex items-center gap-5 xl:gap-7">
             {links.map((l) => {
               const active = isActive(pathname, l.href);
@@ -119,7 +120,7 @@ export function SiteHeader() {
             aria-expanded={open}
             aria-controls="mobile-nav"
             aria-label={open ? t.nav.closeMenu : t.nav.menu}
-            className="inline-flex min-h-9 items-center gap-2 border border-ink px-3 font-mono text-[11.5px] uppercase tracking-[0.1em] text-ink transition-colors hover:bg-paper-2 lg:hidden"
+            className="inline-flex min-h-9 items-center gap-2 border border-ink px-3 font-mono text-[11.5px] uppercase tracking-[0.1em] text-ink transition-colors hover:bg-paper-2 xl:hidden"
           >
             {open ? (
               <CloseIcon className="size-3.5" />
@@ -139,7 +140,7 @@ export function SiteHeader() {
       {open && (
         <div
           id="mobile-nav"
-          className="absolute inset-x-0 top-full h-[calc(100dvh-4rem)] overflow-y-auto border-t border-ink bg-paper animate-rise lg:hidden"
+          className="absolute inset-x-0 top-full h-[calc(100dvh-4rem)] overflow-y-auto border-t border-ink bg-paper animate-rise xl:hidden"
         >
           <nav aria-label={t.nav.primary} className="mx-auto max-w-7xl px-4 pt-4 pb-10 sm:px-6">
             <ol className="border-t border-line">

@@ -40,7 +40,7 @@ export const INDUSTRIES = ["it", "engineering", "automotive", "energy", "constru
 export type Industry = (typeof INDUSTRIES)[number];
 
 /** Indicative conversion rate used only for the EUR preview. */
-export const EUR_TO_RON = 4.97;
+export const EUR_TO_RON = 5.35;
 
 export const DEMO_SMS_SHORTCODE = "88XX – DEMO";
 export const DEMO_IBAN_RON = "RO00 DEMO UPB0 0000 0000 RON0";

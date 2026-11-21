@@ -123,3 +123,125 @@ revoke all on function public.increment_visitors() from public;
 revoke all on function public.get_funnel_stats()   from public;
 grant execute on function public.increment_visitors() to anon, authenticated;
 grant execute on function public.get_funnel_stats()   to anon, authenticated;
+
+-- =====================================================================
+-- 7. Program de ambasadori (coduri de recomandare) – migrare idempotentă
+--    Codul este pseudonim (ex. AMB-7K2QXP), generat în browser; nu conține
+--    date personale și NU oferă recompense – măsoară doar distribuirea.
+-- =====================================================================
+alter table public.simulated_pledges add column if not exists referral_code text;
+alter table public.simulated_pledges drop constraint if exists simulated_pledges_referral_code_check;
+alter table public.simulated_pledges add constraint simulated_pledges_referral_code_check
+  check (referral_code is null or referral_code ~ '^AMB-[A-Z0-9]{6}$');
+create index if not exists simulated_pledges_referral_idx on public.simulated_pledges (referral_code)
+  where referral_code is not null;
+create index if not exists simulated_pledges_created_idx on public.simulated_pledges (created_at desc);
+
+create table if not exists public.referral_visits (
+  id            uuid primary key default gen_random_uuid(),
+  created_at    timestamptz not null default now(),
+  referral_code text not null check (referral_code ~ '^AMB-[A-Z0-9]{6}$')
+);
+create index if not exists referral_visits_code_idx on public.referral_visits (referral_code);
+
+alter table public.referral_visits enable row level security;
+drop policy if exists "referral_visits_public_insert" on public.referral_visits;
+create policy "referral_visits_public_insert" on public.referral_visits
+  for insert to anon, authenticated with check (true);
+
+-- 8. RPC: analiză detaliată (agregate + flux anonimizat) ---------------
+create or replace function public.get_funnel_insights()
+returns json
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select json_build_object(
+    'by_channel', coalesce((
+      select json_object_agg(channel, json_build_object('count', c, 'total', s))
+      from (select channel, count(*) c, sum(amount_ron) s from public.simulated_pledges group by channel) x
+    ), '{}'::json),
+    'by_segment', coalesce((
+      select json_object_agg(segment, json_build_object('count', c, 'total', s))
+      from (select segment, count(*) c, sum(amount_ron) s from public.simulated_pledges group by segment) x
+    ), '{}'::json),
+    'by_industry', coalesce((
+      select json_object_agg(industry, json_build_object('count', c, 'total', s))
+      from (select industry, count(*) c, sum(estimated_ron) s from public.corporate_inquiries
+            where industry is not null group by industry) x
+    ), '{}'::json),
+    'daily', coalesce((
+      select json_agg(json_build_object('day', d.day, 'count', coalesce(p.c, 0), 'total', coalesce(p.s, 0)) order by d.day)
+      from (
+        select gs::date as day
+        from generate_series((now() at time zone 'Europe/Bucharest')::date - 13,
+                             (now() at time zone 'Europe/Bucharest')::date, interval '1 day') gs
+      ) d
+      left join (
+        select (created_at at time zone 'Europe/Bucharest')::date as day, count(*) c, sum(amount_ron) s
+        from public.simulated_pledges group by 1
+      ) p on p.day = d.day
+    ), '[]'::json),
+    -- Flux recent: doar inițiala numelui (fictiv), canal, segment, sumă, moment.
+    'recent', coalesce((
+      select json_agg(r)
+      from (
+        select upper(left(btrim(donor_name), 1)) || '.' as initials, channel, segment, amount_ron, created_at
+        from public.simulated_pledges order by created_at desc limit 8
+      ) r
+    ), '[]'::json),
+    'referral_visits',  (select count(*) from public.referral_visits),
+    'referred_pledges', (select count(*) from public.simulated_pledges where referral_code is not null),
+    'referred_total',   coalesce((select sum(amount_ron) from public.simulated_pledges where referral_code is not null), 0),
+    'leaderboard', coalesce((
+      select json_agg(l)
+      from (
+        select p.referral_code as code,
+               (select count(*) from public.referral_visits v where v.referral_code = p.referral_code) as visits,
+               count(*) as pledges,
+               sum(p.amount_ron) as total
+        from public.simulated_pledges p
+        where p.referral_code is not null
+        group by p.referral_code
+        order by sum(p.amount_ron) desc, count(*) desc
+        limit 5
+      ) l
+    ), '[]'::json)
+  );
+$$;
+
+-- 9. RPC: impactul unui singur cod de ambasador -------------------------
+create or replace function public.get_ambassador_stats(p_code text)
+returns json
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_visits bigint;
+  v_pledges bigint;
+  v_total numeric;
+  v_rank bigint;
+begin
+  if p_code is null or p_code !~ '^AMB-[A-Z0-9]{6}$' then
+    return json_build_object('valid', false);
+  end if;
+  select count(*) into v_visits from public.referral_visits where referral_code = p_code;
+  select count(*), coalesce(sum(amount_ron), 0) into v_pledges, v_total
+    from public.simulated_pledges where referral_code = p_code;
+  select count(*) + 1 into v_rank from (
+    select referral_code from public.simulated_pledges
+    where referral_code is not null and referral_code <> p_code
+    group by referral_code having sum(amount_ron) > v_total
+  ) better;
+  return json_build_object('valid', true, 'visits', v_visits, 'pledges', v_pledges, 'total', v_total,
+                           'rank', case when v_pledges > 0 then v_rank else null end);
+end;
+$$;
+
+revoke all on function public.get_funnel_insights()        from public;
+revoke all on function public.get_ambassador_stats(text)   from public;
+grant execute on function public.get_funnel_insights()      to anon, authenticated;
+grant execute on function public.get_ambassador_stats(text) to anon, authenticated;

@@ -2,7 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { I18nProvider } from "@/lib/i18n";
-import { EMPTY_STATS, clearLocalDemoData, fetchStats, registerVisitOnce, type FunnelStats } from "@/lib/metrics";
+import { EMPTY_STATS, clearLocalDemoData, fetchStats, recordReferralVisit, registerVisitOnce, type FunnelStats } from "@/lib/metrics";
+import { captureReferralFromUrl } from "@/lib/referral";
 
 /* ---------------------------- Metrics ---------------------------- */
 
@@ -37,6 +38,9 @@ function MetricsProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       await registerVisitOnce().catch(() => undefined);
+      // Ambassador links (?ref=AMB-XXXXXX): counted once per session, never for one's own code.
+      const ref = captureReferralFromUrl();
+      if (ref) await recordReferralVisit(ref).catch(() => undefined);
       if (!cancelled) await refresh();
     })();
     return () => {
