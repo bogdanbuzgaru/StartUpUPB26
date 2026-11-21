@@ -4,6 +4,8 @@ import { CONTEST, OFFICIAL, OFFICIAL_CAMPAIGN_URL, TEAM_CODE } from "@/lib/facts
 import { formatLei } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { SegmentCallout } from "@/components/segment-callout";
+import { CampaignSimulator } from "./campaign-simulator";
+import { Roadmap } from "./roadmap";
 import { ArrowUpRight } from "@/components/ui/icons";
 
 function Row({ k, v, mono = true }: { k: string; v: string; mono?: boolean }) {
@@ -75,6 +77,9 @@ export function TransparencyView() {
       <div className="mt-px">
         <SegmentCallout id="segment-transparenta" />
       </div>
+
+      <CampaignSimulator />
+      <Roadmap />
 
       {/* Ethics & privacy enforcement */}
       <section aria-labelledby="ethics-title" className="pt-20 lg:pt-28">

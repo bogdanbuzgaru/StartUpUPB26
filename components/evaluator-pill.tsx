@@ -3,19 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n";
-import { useTester, type TesterKind } from "@/components/providers";
-import { CloseIcon, FlaskIcon } from "@/components/ui/icons";
+import { useMetrics, useTester, type TesterKind } from "@/components/providers";
+import { CheckIcon, CloseIcon, FlaskIcon, RefreshIcon } from "@/components/ui/icons";
+
+type FillKind = Exclude<TesterKind, "reset">;
 
 /**
  * Where each tester action lands. Pages with a matching form are filled in place;
  * from any other page the tester navigates to the most relevant form.
  */
-const ROUTES: Record<string, Partial<Record<TesterKind, string>>> = {
+const ROUTES: Record<string, Partial<Record<FillKind, string>>> = {
   "/companii": { corporate: "corporate", invalid: "corporate" },
   "/absolventi": { alumni: "calculator", invalid: "calculator" },
   "/contribuie": { corporate: "corporate", alumni: "sms", invalid: "corporate" },
 };
-const FALLBACK: Record<TesterKind, string> = {
+const FALLBACK: Record<FillKind, string> = {
   corporate: "/companii#corporate",
   alumni: "/absolventi#calculator",
   invalid: "/contribuie#corporate",
@@ -24,6 +26,24 @@ const FALLBACK: Record<TesterKind, string> = {
 export function EvaluatorPill() {
   const { t } = useI18n();
   const { fire } = useTester();
+  const { resetSession } = useMetrics();
+  const [toast, setToast] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 4000);
+    return () => window.clearTimeout(id);
+  }, [toast]);
+
+  const resetDemo = async () => {
+    setResetting(true);
+    fire("reset");
+    const mode = await resetSession();
+    setResetting(false);
+    setOpen(false);
+    setToast(mode === "local" ? t.tester.resetToastLocal : mode === "remote" ? t.tester.resetToastRemote : t.tester.resetToastError);
+  };
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -43,7 +63,7 @@ export function EvaluatorPill() {
     };
   }, [open]);
 
-  const run = (kind: TesterKind) => {
+  const run = (kind: FillKind) => {
     fire(kind);
     setOpen(false);
     const id = ROUTES[pathname]?.[kind];
@@ -55,7 +75,7 @@ export function EvaluatorPill() {
   };
 
   return (
-    <div ref={panelRef} className="fixed bottom-4 left-4 z-40 sm:bottom-6 sm:left-6">
+    <div ref={panelRef} className="print-hide fixed bottom-4 left-4 z-40 sm:bottom-6 sm:left-6">
       {open && (
         <div
           id="tester-panel"
@@ -94,7 +114,27 @@ export function EvaluatorPill() {
               </li>
             ))}
           </ul>
+          <div className="border-t border-dashed border-ink">
+            <button
+              type="button"
+              onClick={() => void resetDemo()}
+              disabled={resetting}
+              className="flex min-h-12 w-full items-center gap-3 px-4 text-left text-[13.5px] text-ink transition-colors hover:bg-paper-2 disabled:cursor-wait disabled:opacity-60"
+            >
+              <RefreshIcon className={`size-3.5 text-ink-3 ${resetting ? "animate-spin" : ""}`} />
+              {t.tester.reset}
+            </button>
+          </div>
         </div>
+      )}
+      {toast && (
+        <p
+          role="status"
+          className="absolute bottom-full left-0 mb-2 flex w-[min(20rem,calc(100vw-2rem))] items-start gap-2 border border-ink bg-ink px-4 py-3 text-[13px] leading-snug text-paper shadow-[4px_4px_0_0_var(--color-accent)] animate-rise"
+        >
+          <CheckIcon className="mt-0.5 size-4 shrink-0" />
+          {toast}
+        </p>
       )}
       <button
         type="button"

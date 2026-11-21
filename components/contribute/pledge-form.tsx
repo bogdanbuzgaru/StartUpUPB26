@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { EUR_TO_RON, LIMITS, SEGMENTS, type Channel, type Segment } from "@/lib/facts";
 import { formatAmount, formatLei, formatPercent, parseAmount, shareOfPhase1 } from "@/lib/format";
 import { errorMessage } from "@/lib/dictionary";
@@ -54,6 +54,8 @@ export function PledgeForm({
   const [errors, setErrors] = useState<Errors<Keys>>({});
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** Bumped by a reset so results of saves started earlier are discarded. */
+  const generation = useRef(0);
   const [saveError, setSaveError] = useState(false);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [prefilled, setPrefilled] = useState<string | null>(null);
@@ -83,6 +85,14 @@ export function PledgeForm({
 
   useTesterSignal((kind: TesterKind) => {
     if (kind === "corporate") return;
+    if (kind === "reset") {
+      generation.current += 1;
+      setBusy(false);
+      reset();
+      setSaveError(false);
+      setPrefilled(null);
+      return;
+    }
     setReceipt(null);
     setSaveError(false);
     if (kind === "alumni") {
@@ -112,6 +122,7 @@ export function PledgeForm({
 
     const value = validateAmount(amount, limits).value as number;
     const amountRon = currency === "EUR" ? Math.round(value * EUR_TO_RON * 100) / 100 : value;
+    const gen = generation.current;
     setBusy(true);
     try {
       const res = await savePledge({
@@ -122,6 +133,7 @@ export function PledgeForm({
         currency,
         amount_ron: amountRon,
       });
+      if (gen !== generation.current) return;
       if (!res.ok) {
         setSaveError(true);
         return;
@@ -129,9 +141,9 @@ export function PledgeForm({
       setReceipt({ ref: makeRef(channel), name: name.trim(), amount: value, amountRon, mode: res.mode });
       await refresh();
     } catch {
-      setSaveError(true);
+      if (gen === generation.current) setSaveError(true);
     } finally {
-      setBusy(false);
+      if (gen === generation.current) setBusy(false);
     }
   };
 

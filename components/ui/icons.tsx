@@ -50,6 +50,11 @@ export const SparkIcon = (p: P) => (
     <path d="M8 2v3M8 11v3M2 8h3M11 8h3M4.2 4.2l1.6 1.6M10.2 10.2l1.6 1.6M11.8 4.2l-1.6 1.6M5.8 10.2l-1.6 1.6" />
   </svg>
 );
+export const DownloadIcon = (p: P) => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden {...p}>
+    <path d="M8 2v8M4.5 6.5 8 10l3.5-3.5M2.5 13.5h11" strokeLinecap="square" />
+  </svg>
+);
 export const FlaskIcon = (p: P) => (
   <svg viewBox="0 0 16 16" {...base} {...p}>
     <path d="M6 2h4M6.5 2v4L3 13a1 1 0 0 0 .9 1.5h8.2A1 1 0 0 0 13 13L9.5 6V2M5 10h6" />

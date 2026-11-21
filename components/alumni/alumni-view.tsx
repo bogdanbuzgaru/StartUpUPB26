@@ -59,7 +59,11 @@ export function AlumniView() {
 
   useTesterSignal((kind, nonce) => {
     if (kind === "corporate") return;
-    if (kind === "alumni") {
+    if (kind === "reset") {
+      setRaw("250");
+      setChannel("linkedin");
+      setMsgLang(null);
+    } else if (kind === "alumni") {
       setRaw(TESTER_AMOUNTS[(nonce - 1) % TESTER_AMOUNTS.length]);
       setChannel(AMBASSADOR_CHANNELS[(nonce - 1) % AMBASSADOR_CHANNELS.length]);
     } else {

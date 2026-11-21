@@ -100,6 +100,25 @@ export async function registerVisitOnce(): Promise<void> {
   }
 }
 
+/**
+ * Clears this browser's demo state only: locally simulated pledges/inquiries and, in local mode,
+ * the visitor-session flag. It never touches rows in the shared Supabase database.
+ */
+export function clearLocalDemoData(): void {
+  try {
+    window.localStorage.removeItem(LOCAL_KEY);
+  } catch {
+    /* ignore */
+  }
+  // Remote mode keeps the visit flag: clearing it would re-increment the shared Supabase counter.
+  if (getSupabase()) return;
+  try {
+    window.sessionStorage.removeItem(VISIT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 function num(v: unknown): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;

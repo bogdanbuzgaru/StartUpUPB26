@@ -80,7 +80,7 @@ export function ChatDrawer() {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={`fixed bottom-4 right-4 z-40 inline-flex min-h-12 items-center gap-2.5 bg-ink pl-4 pr-5 text-[14px] font-medium text-paper shadow-[0_10px_30px_-12px_rgba(21,20,15,0.6)] transition-all duration-200 hover:bg-accent sm:bottom-6 sm:right-6 ${
+        className={`print-hide fixed bottom-4 right-4 z-40 inline-flex min-h-12 items-center gap-2.5 bg-ink pl-4 pr-5 text-[14px] font-medium text-paper shadow-[0_10px_30px_-12px_rgba(21,20,15,0.6)] transition-all duration-200 hover:bg-accent sm:bottom-6 sm:right-6 ${
           open ? "pointer-events-none translate-y-2 opacity-0" : "opacity-100"
         }`}
       >
@@ -89,7 +89,7 @@ export function ChatDrawer() {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-end sm:inset-auto sm:bottom-6 sm:right-6">
+        <div className="print-hide fixed inset-0 z-50 flex items-end justify-end sm:inset-auto sm:bottom-6 sm:right-6">
           <div className="absolute inset-0 bg-ink/30 sm:hidden" onClick={() => setOpen(false)} aria-hidden />
           <div
             role="dialog"

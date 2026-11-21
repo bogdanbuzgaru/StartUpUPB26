@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { CONTEST, CSR_FOCUS, INDUSTRIES, LIMITS, TIERS, TIER_RON, type CsrFocus, type Industry, type Tier } from "@/lib/facts";
 import { formatLei, formatPercent, shareOfPhase1 } from "@/lib/format";
 import { errorMessage } from "@/lib/dictionary";
@@ -20,6 +20,8 @@ import {
 } from "@/lib/validation";
 import { useMetrics, useTesterSignal } from "@/components/providers";
 import { CopyButton, Field, FormAlert, SubmitButton } from "@/components/ui/form";
+import { DownloadIcon } from "@/components/ui/icons";
+import { PrintableBrief } from "./printable-brief";
 
 type Keys = "company" | "contact" | "email" | "industry" | "focus" | "tier" | "custom";
 type Values = { company: string; contact: string; email: string; industry: string; focus: string; tier: string; custom: string };
@@ -89,6 +91,8 @@ export function CorporatePortal() {
   const [errors, setErrors] = useState<Errors<Keys>>({});
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** Bumped by a reset so results of saves started earlier are discarded. */
+  const generation = useRef(0);
   const [saveError, setSaveError] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
@@ -114,7 +118,13 @@ export function CorporatePortal() {
     if (kind === "alumni") return;
     setResult(null);
     setSaveError(false);
-    if (kind === "corporate") {
+    if (kind === "reset") {
+      generation.current += 1;
+      setBusy(false);
+      setV(EMPTY);
+      setSubmitted(false);
+      setErrors({});
+    } else if (kind === "corporate") {
       setV(TESTER_EXAMPLES[(nonce - 1) % TESTER_EXAMPLES.length]);
       setSubmitted(false);
       setErrors({});
@@ -139,6 +149,7 @@ export function CorporatePortal() {
     setErrors(errs);
     const amount = amountFor(v);
     if (hasErrors(errs) || !isIndustry(v.industry) || !isCsrFocus(v.focus) || !isTier(v.tier) || !amount) return;
+    const gen = generation.current;
     setBusy(true);
     try {
       const res = await saveInquiry({
@@ -150,6 +161,7 @@ export function CorporatePortal() {
         tier: v.tier,
         estimated_ron: amount,
       });
+      if (gen !== generation.current) return;
       if (!res.ok) {
         setSaveError(true);
         return;
@@ -166,11 +178,15 @@ export function CorporatePortal() {
       });
       await refresh();
     } catch {
-      setSaveError(true);
+      if (gen === generation.current) setSaveError(true);
     } finally {
-      setBusy(false);
+      if (gen === generation.current) setBusy(false);
     }
   };
+
+  const briefDate = result
+    ? result.date.toLocaleDateString(lang === "ro" ? "ro-RO" : "en-GB", { day: "2-digit", month: "long", year: "numeric" })
+    : "";
 
   // The brief re-renders in the active UI language.
   const brief = result
@@ -182,7 +198,7 @@ export function CorporatePortal() {
         focus: t.corporate.focuses[result.focus],
         tier: result.tier === "custom" ? formatLei(result.amount) : t.corporate.tiers[result.tier],
         share: formatPercent(shareOfPhase1(result.amount)),
-        date: result.date.toLocaleDateString(lang === "ro" ? "ro-RO" : "en-GB", { day: "2-digit", month: "long", year: "numeric" }),
+        date: briefDate,
       })
     : "";
 
@@ -299,7 +315,17 @@ export function CorporatePortal() {
           <div className="flex flex-1 flex-col gap-4 pt-4 animate-rise" role="status" aria-live="polite">
             <pre className="max-h-[44rem] flex-1 overflow-auto whitespace-pre-wrap break-words font-mono text-[12px] leading-[1.65] text-ink-2">{brief}</pre>
             <div className="flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <CopyButton text={brief} label={t.corporate.copyBrief} variant="solid" />
+              <div className="flex flex-wrap items-start gap-2">
+                <CopyButton text={brief} label={t.corporate.copyBrief} variant="solid" />
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex min-h-10 items-center gap-2 border border-ink px-3.5 font-mono text-[12px] uppercase tracking-[0.08em] text-ink transition-colors duration-150 hover:bg-ink hover:text-paper"
+                >
+                  <DownloadIcon className="size-4" />
+                  {t.printBrief.button}
+                </button>
+              </div>
               <p className="text-[12px] text-ink-3">
                 {t.corporate.briefNote} {result.mode === "local" ? t.forms.receiptSavedLocal : t.forms.receiptSavedRemote}
               </p>
@@ -313,6 +339,7 @@ export function CorporatePortal() {
           </div>
         )}
       </div>
+      {result && <PrintableBrief brief={brief} industry={t.industries[result.industry]} date={briefDate} />}
     </div>
   );
 }

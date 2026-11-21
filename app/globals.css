@@ -120,6 +120,130 @@
   }
 }
 
+/* Range sliders (campaign simulator) */
+.range {
+  height: 1.5rem;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ */
+/* Print: the sponsorship brief sheet prints as one clean A4 page.     */
+/* ------------------------------------------------------------------ */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 13mm 15mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .print-hide {
+    display: none !important;
+  }
+  body:has(> .print-sheet) input,
+  body:has(> .print-sheet) select,
+  body:has(> .print-sheet) textarea,
+  body:has(> .print-sheet) button {
+    display: none !important;
+  }
+  /* When a brief sheet exists, print only the sheet. */
+  body:has(> .print-sheet) > *:not(.print-sheet) {
+    display: none !important;
+  }
+  body > .print-sheet {
+    display: block !important;
+    font-family: var(--font-sans);
+    color: #000;
+  }
+  .print-sheet__head {
+    border-bottom: 1.5pt solid #000;
+    padding-bottom: 6pt;
+  }
+  .print-sheet__banner {
+    font-family: var(--font-mono);
+    font-size: 7pt;
+    letter-spacing: 0.02em;
+    border: 0.75pt dashed #000;
+    padding: 2pt 5pt;
+    margin: 0 0 7pt;
+  }
+  .print-sheet__title {
+    font-family: var(--font-serif);
+    font-size: 15pt;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .print-sheet__meta {
+    font-size: 8.5pt;
+    margin: 4pt 0 0;
+    color: #333;
+  }
+  .print-sheet__milestones {
+    margin: 7pt 0;
+    padding: 6pt 0;
+    border-bottom: 0.75pt solid #999;
+  }
+  .print-sheet__label {
+    font-family: var(--font-mono);
+    font-size: 7pt;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #555;
+    margin: 0 0 4pt;
+  }
+  .print-sheet__milestones dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10pt;
+    margin: 0;
+  }
+  .print-sheet__milestones dt {
+    font-size: 8pt;
+    color: #444;
+  }
+  .print-sheet__milestones dd {
+    margin: 1pt 0 0;
+    font-family: var(--font-mono);
+    font-size: 14pt;
+    letter-spacing: -0.02em;
+    color: var(--color-accent-ink);
+  }
+  .print-sheet__brief {
+    font-family: var(--font-mono);
+    font-size: 7.9pt;
+    line-height: 1.38;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    color: #111;
+  }
+  .print-sheet__foot {
+    margin-top: 8pt;
+    padding-top: 5pt;
+    border-top: 0.75pt solid #000;
+    font-size: 7pt;
+    line-height: 1.4;
+    color: #333;
+    break-inside: avoid;
+  }
+  .print-sheet__foot p {
+    margin: 0 0 2pt;
+  }
+  .print-sheet__required {
+    font-family: var(--font-mono);
+    font-size: 8pt;
+    color: #000;
+    margin-top: 4pt !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

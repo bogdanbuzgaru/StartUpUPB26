@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { I18nProvider } from "@/lib/i18n";
-import { EMPTY_STATS, fetchStats, registerVisitOnce, type FunnelStats } from "@/lib/metrics";
+import { EMPTY_STATS, clearLocalDemoData, fetchStats, registerVisitOnce, type FunnelStats } from "@/lib/metrics";
 
 /* ---------------------------- Metrics ---------------------------- */
 
@@ -11,6 +11,8 @@ type MetricsValue = {
   mode: "remote" | "local" | "unknown";
   status: "loading" | "ready" | "error";
   refresh: () => Promise<void>;
+  /** Clears this browser's demo data and reloads counters; returns the active data mode. */
+  resetSession: () => Promise<"remote" | "local" | "error">;
 };
 
 const MetricsContext = createContext<MetricsValue | null>(null);
@@ -42,7 +44,28 @@ function MetricsProvider({ children }: { children: ReactNode }) {
     };
   }, [refresh]);
 
-  const value = useMemo(() => ({ stats, mode, status, refresh }), [stats, mode, status, refresh]);
+  const resetSession = useCallback(async () => {
+    clearLocalDemoData();
+    // Local mode: counters restart from the empty baseline (this visit is counted again).
+    // Remote mode: the visit flag is kept, so this is a no-op and shared totals are re-read unchanged.
+    try {
+      await registerVisitOnce().catch(() => undefined);
+      const res = await fetchStats();
+      setStats(res.stats);
+      setMode(res.mode);
+      setStatus("ready");
+      return res.mode;
+    } catch {
+      // Keep the last known stats on screen; the caller reports the failure.
+      setStatus("error");
+      return "error" as const;
+    }
+  }, []);
+
+  const value = useMemo(
+    () => ({ stats, mode, status, refresh, resetSession }),
+    [stats, mode, status, refresh, resetSession],
+  );
   return <MetricsContext.Provider value={value}>{children}</MetricsContext.Provider>;
 }
 
@@ -54,7 +77,7 @@ export function useMetrics(): MetricsValue {
 
 /* ------------------------ Evaluator tester ------------------------ */
 
-export type TesterKind = "alumni" | "corporate" | "invalid";
+export type TesterKind = "alumni" | "corporate" | "invalid" | "reset";
 export type TesterSignal = { kind: TesterKind; nonce: number; at: number };
 
 const TesterContext = createContext<{ signal: TesterSignal | null; fire: (k: TesterKind) => void } | null>(null);
@@ -84,12 +107,18 @@ export function useTester() {
 export function useTesterSignal(handler: (kind: TesterKind, nonce: number) => void) {
   const { signal } = useTester();
   const handled = useRef(0);
+  const mountedAt = useRef<number | null>(null);
   const handlerRef = useRef(handler);
   handlerRef.current = handler;
+  useEffect(() => {
+    mountedAt.current = Date.now();
+  }, []);
   useEffect(() => {
     if (!signal || signal.nonce === handled.current) return;
     if (Date.now() - signal.at > 5000) return;
     handled.current = signal.nonce;
+    // Fill actions follow a navigation; a reset only applies to forms already on screen.
+    if (signal.kind === "reset" && mountedAt.current !== null && signal.at < mountedAt.current) return;
     handlerRef.current(signal.kind, signal.nonce);
   }, [signal]);
 }
